@@ -1,9 +1,11 @@
 const express = require('express');
+const cors = require('cors');
 
 const app = express();
 
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
+app.use(cors());
 
 const database = {
   users: [
@@ -46,7 +48,6 @@ app.post('/register', (req, res) => {
       id: '1235',
       name: name,
       email: email,
-      password: password,
       entries: 0,
       joined: new Date(),
     })
