@@ -1,5 +1,17 @@
 const express = require('express');
 const cors = require('cors');
+const knex = require('knex');
+const { response } = require('express');
+
+const db = knex({
+  client: 'pg',
+  connection: {
+    host : '127.0.0.1',
+    user : 'postgres',
+    password : 'toto',
+    database : 'smartbrain'
+  }
+});
 
 const app = express();
 
@@ -35,7 +47,7 @@ app.get('/', (req, res) => {
 app.post('/signin', (req, res) => {
   if (req.body.email === database.users[0].email
     && req.body.password === database.users[0].password) {
-      res.json('succes');
+      res.json(database.users[0]);
     } else {
       res.status(400).json('error logging in');
     }
@@ -43,15 +55,17 @@ app.post('/signin', (req, res) => {
 
 app.post('/register', (req, res) => {
   const { email, name, password } = req.body;
-  database.users.push(
-    {
-      id: '1235',
-      name: name,
+  db('users')
+    .returning('*')
+    .insert({
       email: email,
-      entries: 0,
-      joined: new Date(),
+      name: name,
+      joined: new Date()
     })
-    res.json(database.users[database.users.length-1]);
+  .then(user => {
+    res.json(user[0]);
+  })
+  .catch(err => res.status(400).json('unable to register'))
 })
 
 app.get('/profile/:id', (req, res) => {
