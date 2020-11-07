@@ -3,6 +3,11 @@ const cors = require('cors');
 const knex = require('knex');
 const { response } = require('express');
 
+const register = require('./controllers/register');
+const signin = require('./controllers/signin');
+const profile = require('./controllers/profile');
+const image = require('./controllers/image');
+
 const db = knex({
   client: 'pg',
   connection: {
@@ -18,87 +23,31 @@ const app = express();
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
 app.use(cors());
-
-const database = {
-  users: [
-    {
-      id: '123',
-      name: 'John',
-      email: 'john@email.com',
-      password: 'cookies',
-      entries: 0,
-      joined: new Date(),
-    },
-    {
-      id: '1234',
-      name: 'Sally',
-      email: 'sally@email.com',
-      password: 'bananas',
-      entries: 0,
-      joined: new Date(),
-    }
-  ]
-}
+const bcrypt = require('bcrypt');
 
 app.get('/', (req, res) => {
   res.send(database.users);
 })
 
 app.post('/signin', (req, res) => {
-  if (req.body.email === database.users[0].email
-    && req.body.password === database.users[0].password) {
-      res.json(database.users[0]);
-    } else {
-      res.status(400).json('error logging in');
-    }
-})
+  signin.handleSignin(req, res, db, bcrypt)
+});
+
 
 app.post('/register', (req, res) => {
-  const { email, name, password } = req.body;
-  db('users')
-    .returning('*')
-    .insert({
-      email: email,
-      name: name,
-      joined: new Date()
-    })
-  .then(user => {
-    res.json(user[0]);
-  })
-  .catch(err => res.status(400).json('unable to register'))
-})
+  register.handleRegister(req, res, db, bcrypt)
+});
 
 app.get('/profile/:id', (req, res) => {
-  const { id } = req.params;
-  let found = false;
-
-  database.users.forEach(user => {
-    if (user.id === id) {
-      found = true;
-      return res.json(user);
-    }
-  })
-
-    if(!found) {
-      res.status(400).json('user not found')
-    }
+  profile.handleGetProfile(req, res, db)
 })
 
 app.put('/image', (req, res) => {
-  const { id } = req.body;
-  let found = false;
+  image.handleImage(req, res, db)
+})
 
-  database.users.forEach(user => {
-    if (user.id === id) {
-      found = true;
-      user.entries++;
-      return res.json(user.entries);
-    }
-  })  
-
-  if(!found) {
-    res.status(400).json('user not found')
-  }
+app.post('/imageurl', (req, res) => {
+  image.handleApiCall(req, res)
 })
 
 app.listen(3000, () => {
